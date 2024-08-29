@@ -1,0 +1,56 @@
+#!/bin/sh
+set -eu
+MESSAGE="$1"
+
+if ! command -v mktemp >/dev/null; then
+	m4temp() {
+		echo "mkstemp(dir/format)" | m4 -D dir="${TMPDIR:-/tmp}" -D format="${1:-tmp.XXXXXX}"
+	}
+else
+	m4temp() {
+		mktemp -p "${TMPDIR:-/tmp}" "${1:-tmp.XXXXXX}"
+	}
+fi
+
+fail_gracefully() {
+	DIRNAME=$(git rev-parse --show-toplevel)
+	DIRNAME=$(basename "$DIRNAME")
+	MOVEFILE="$(m4temp "$USER-$DIRNAME.XXXXXX")"
+	cat "$MESSAGE" >>"$MOVEFILE"
+	echo "$1."
+	echo "The commit message was saved to: $MOVEFILE"
+	exit 1
+}
+
+LINE_NO=1
+while IFS= read -r line; do
+	if [ "$(echo "$line" | head -c 1)" = "#" ]; then
+		# Skip all comments
+		continue
+	fi
+	LENGTH="${#line}"
+	case "$LINE_NO" in
+	1)
+		# Commit summary
+		[ "${LENGTH}" -gt 50 ] && fail_gracefully "Commit summary must be 50 chars or less, was $LENGTH"
+
+		case "$line" in
+		[a-z][a-z][a-z]:\ * | \*:\ *)
+			true
+			;;
+		*)
+			fail_gracefully 'Commit summary must be of format "<id|*>": <summary>".'
+			;;
+		esac
+		;;
+	2)
+		# Separation of summary & description
+		[ "${LENGTH}" -gt 0 ] && fail_gracefully "Commit message's second line should be empty, was $LENGTH chars long"
+		;;
+	*)
+		# Commit description
+		[ "${LENGTH}" -gt 72 ] && fail_gracefully "Commit description's line must be 72 chars or less, was $LENGTH"
+		;;
+	esac
+	LINE_NO=$((LINE_NO + 1))
+done <"$MESSAGE"
