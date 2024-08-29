@@ -2,23 +2,36 @@
 | envsubst
 @
 
-${TASKID}.tgz
+/${TASKID}.tgz
 
 # Comment out when using manual tests!!!
-in/*.in
-!in/*ocen.in
-out/*.out
-!out/*ocen.out
+/in/*.in
+!/in/*ocen.in
+/out/*.out
+!/out/*ocen.out
 
 # Don't keep PDF's, we've got a build task for a reason
-doc/${TASKID}zad.pdf
-doc/${TASKID}zad-*.pdf
+/doc/${TASKID}zad.pdf
+/doc/${TASKID}zad-*.pdf
+
+# Also ignore all LaTeX artifacts, everywhere!
+*.log
+*.aux
+*.dvi
+*.err
+*.inf
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
 
 # Don't keep the binaries and other artifacts
-prog/*
-!prog/*.c
-!prog/*.cpp
-!prog/*.h
-!prog/*.hpp
-!prog/Makefile
+/prog/*
+!/prog/*.c
+!/prog/*.cpp
+!/prog/*.h
+!/prog/*.hpp
+!/prog/*.py
+!/prog/*.i
+!/prog/Makefile
 
