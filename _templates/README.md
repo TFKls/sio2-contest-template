@@ -47,16 +47,16 @@ When a filename ends with an at-sign `@`, it is processed by the substitution en
 The expected syntax of a templated file (e.g. named `example@` is as follows):
 ```
 @[mode] [name]
-| pipe1
-| pipe2
-|# comment
-| pipe3
+| ...
+| shell_script
+| ...
 @
-...content...
+...
+content
+...
 ```
-The script then takes the content, and pipes it through the shell expressions
-in the described order. This allows for chaining of operations like `sed`,
-`envsubst` and similar.
+The script then takes the content, and passes it to the script via the
+standard input, saving the resulting standard output into the `name` file.
 
 If `name` is not set, the result is saved to the filename without the at-sign
 (i.e. `example` in our case). Otherwise, it is saved as the result of the
@@ -77,6 +77,6 @@ The accepted modes are as follows:
   if it exists, or otherwise create a file with it's raw, untransformed content
 
 If the first line doesn't begin with `@`, it will be defaulted to `@fail`.
-Any character other than `@|`, including spaces, starts the content block, 
+Any character other than `@|`, including spaces, starts the content block,
 so the ending at-sign is often unnecessary (unless the file contents should begin 
 with either of the special characters).

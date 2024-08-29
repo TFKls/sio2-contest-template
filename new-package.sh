@@ -70,10 +70,11 @@ substitute() {
 		;;
 	esac
 	rm -f ./_tmp/substitute
+	rm -f ./_tmp/substitute_sh
+	touch ./_tmp/substitute_sh
 
 	GUARD=0
 	SUB_MODE=
-	PIPELINE="cat"
 	while IFS= read -r line; do
 		case "$line" in
 		'@'*)
@@ -81,12 +82,9 @@ substitute() {
 			[ "$GUARD" = 1 ] && GUARD=2 && continue
 			[ "$GUARD" = 0 ] && GUARD=1
 			;;
-		'|#'*)
-			[ "$GUARD" = 0 ] && GUARD=1
-			;;
 		'|'*)
 			[ "$GUARD" = 0 ] && GUARD=1
-			[ "$GUARD" = 1 ] && PIPELINE="$PIPELINE | (${line#"|"})"
+			[ "$GUARD" = 1 ] && echo "${line#"|"}" >>./_tmp/substitute_sh
 			;;
 		*)
 			GUARD=2
@@ -109,27 +107,27 @@ substitute() {
 		case "$SUB_MODE" in
 		fail | 'fail!')
 			echo "substitute: File exists ($SUB_MODE): $NEW_NAME"
-			rm ./_tmp/substitute
+			rm ./_tmp/substitute ./_tmp/substitute_sh
 			return 1
 			;;
 		override | 'override!')
-			sh -xc "$PIPELINE" <./_tmp/substitute >"$NEW_NAME"
-			rm ./_tmp/substitute
+			sh -x ./_tmp/substitute_sh <./_tmp/substitute >"$NEW_NAME"
+			rm ./_tmp/substitute ./_tmp/substitute_sh
 			return 0
 			;;
 		append | 'append!')
-			sh -xc "$PIPELINE" <./_tmp/substitute >>"$NEW_NAME"
-			rm ./_tmp/substitute
+			sh -x ./_tmp/substitute_sh <./_tmp/substitute >>"$NEW_NAME"
+			rm ./_tmp/substitute ./_tmp/substitute_sh
 			return 0
 			;;
 		transform | 'transform!' | 'transform?')
 			mv -f "$NEW_NAME" ./_tmp/substitute
-			sh -xc "$PIPELINE" <./_tmp/substitute >"$NEW_NAME"
-			rm ./_tmp/substitute
+			sh -x ./_tmp/substitute_sh <./_tmp/substitute >"$NEW_NAME"
+			rm ./_tmp/substitute ./_tmp/substitute_sh
 			return 0
 			;;
 		nothing | 'nothing!')
-			rm ./_tmp/substitute
+			rm ./_tmp/substitute ./_tmp/substitute_sh
 			return 0
 			;;
 		*)
@@ -143,16 +141,17 @@ substitute() {
 		case "$SUB_MODE" in
 		'fail!' | 'override!' | 'append!' | 'transform!' | 'nothing!')
 			echo "substitute: File doesn't exist ($SUB_MODE): $NEW_NAME"
-			rm ./_tmp/substitute
+			rm ./_tmp/substitute ./_tmp/substitute_sh
 			return 1
 			;;
 		'transform?')
 			mv ./_tmp/substitute "$NEW_NAME"
+			rm ./_tmp/substitute_sh
 			return 0
 			;;
 		fail | override | append | transform | nothing)
-			sh -xc "$PIPELINE" <./_tmp/substitute >"$NEW_NAME"
-			rm ./_tmp/substitute
+			sh -x ./_tmp/substitute_sh <./_tmp/substitute >"$NEW_NAME"
+			rm ./_tmp/substitute ./_tmp/substitute_sh
 			return 0
 			;;
 		*)
