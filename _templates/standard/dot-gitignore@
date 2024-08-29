@@ -1,0 +1,24 @@
+@append ".gitignore"
+| envsubst
+@
+
+${TASKID}.tgz
+
+# Comment out when using manual tests!!!
+in/*.in
+!in/*ocen.in
+out/*.out
+!out/*ocen.out
+
+# Don't keep PDF's, we've got a build task for a reason
+doc/${TASKID}zad.pdf
+doc/${TASKID}zad-*.pdf
+
+# Don't keep the binaries and other artifacts
+prog/*
+!prog/*.c
+!prog/*.cpp
+!prog/*.h
+!prog/*.hpp
+!prog/Makefile
+

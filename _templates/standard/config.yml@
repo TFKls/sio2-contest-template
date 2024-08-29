@@ -1,0 +1,25 @@
+@fail
+| # Possibly too complex subtask generation :)
+| SCORE=$(((100 / SUBTASKS)+1))
+| REM=$(((100 % SUBTASKS)+1))
+| TIME_LIMITS="# time_limits:"
+| SCORES="scores:"
+| for TASK in $(seq 1 "$SUBTASKS"); do
+|   [ "$TASK" -eq "$REM" ] && SCORE=$((SCORE-1))
+|   SCORES="$SCORES
+|  $TASK: $SCORE"
+|   TIME_LIMITS="$TIME_LIMITS
+|#   $TASK: ${TIME_MS}"
+| done
+| export TIME_LIMITS
+| export SCORES
+| envsubst
+@
+title: ${TASKNAME}
+
+memory_limit: ${MEMORY_KB}
+time_limit: ${TIME_MS}
+
+${TIME_LIMITS}
+
+${SCORES}

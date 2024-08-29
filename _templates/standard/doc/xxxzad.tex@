@@ -1,0 +1,51 @@
+@fail "${TASKID}zad.tex"
+| # vi: ft=tex
+| # Possibly too complex subtask generation :)
+| SCORE=$(((100 / SUBTASKS)+1))
+| REM=$(((100 % SUBTASKS)+1))
+| SCORES=""
+| for TASK in $(seq 1 "$SUBTASKS"); do
+|   [ "$TASK" -eq "$REM" ] && SCORE=$((SCORE-1))
+|   SCORES="$SCORES
+|			${TASK} & \$${SCORE}\$ & ... & \$${TIME}\$ s \\\\\\hline"
+| done
+| export SCORES
+| envsubst
+@
+\documentclass[zad,zawodnik,utf8,${TASKLANG}]{sinol}
+\title{${TASKNAME}}
+\id{${TASKID}}
+\signature{${CONTESTID}}
+\konkurs{${CONTESTNAME}}
+\day{TODO}
+\date{TODO}
+\RAM{${MEMORY}}
+\iomode{stdin}
+\pagestyle{fancy}
+
+\usepackage{bm}
+% TEX_PACKAGE_GUARD
+
+\begin{document}
+\begin{tasktext}
+	\noindent Daleko w bajtocji żył lorem ipsum dolor...
+
+	\section{\sinolSNameInput}
+	Brak wej'scia.
+
+	\section{\sinolSNameOutput}
+	Brak wyj'scia.
+
+	\section{\sinolSNameGrading}
+	% \makecompatexample{1ocen}
+
+	\section{${SUBTASKS}}
+	\begin{center}
+		\begin{tabular}{|c|c|l|c|}
+			\hline
+			\textbf{\sinolSNameSubtask}    & \textbf{\sinolSNamePoints}    &
+			\textbf{\sinolSNameConditions} & \textbf{\sinolSNameTimeLimit}   \\\hline${SCORES}
+		\end{tabular}
+	\end{center}
+\end{tasktext}
+\end{document}

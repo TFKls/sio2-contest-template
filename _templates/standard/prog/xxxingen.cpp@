@@ -1,0 +1,4 @@
+@fail "${TASKID}ingen.cpp"
+int main() {
+  return 0;
+}

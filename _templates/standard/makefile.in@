@@ -1,0 +1,15 @@
+@fail
+| export TIME_WHOLE=$(((TIME_MS+999)/1000))
+| export TIME_WHOLE_X3=$(((TIME_MS*3+999)/1000))
+| envsubst
+@
+MODE=opr
+ID=${TASKID}
+SIG=$(ID)
+
+TIME_LIMIT=${TIME_WHOLE}
+SLOW_TIMELIMIT=${TIME_WHOLE_X3}
+MEMLIMIT=${MEMORY_KB}
+
+# Change this locally if not in your PATH
+OI_TIME=oiejq
