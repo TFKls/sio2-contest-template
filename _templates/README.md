@@ -27,18 +27,19 @@ The directory merging procedure takes two directories (below referred to as
 source and destination) and recursively moves the contents of one into the
 other. The procedure is described as follows:
 
-- For each non-hidden file `$source/$file`, move the file into `$destination/$file`,
-  if the destination location is not already a file or directory. Otherwise exit
-  with an error.
-- For each non-hidden directory `$source/$dir`, create the directory
-  `$destination/$dir`, and call the merging procedure recursively on `$source/$dir`
-  and `$destination/$dir`. If the destination directory already exists, do not fail
-  and call recursively on the existing directory. If the destination location is a
-  file, exist with an error.
+- For each non-hidden file `$source/$file`, move the file into
+  `$destination/$file`, if the destination location is not already a file or
+  directory. Otherwise exit with an error.
+- For each hidden file `$source/$file`, delete it.
+- For each directory `$source/$dir` (possibly hidden), create the directory
+  `$destination/$dir`, and call the merging procedure recursively on
+  `$source/$dir` and `$destination/$dir`. If the destination directory already
+  exists, do not fail and call recursively on the existing directory. If the
+  destination location is a file, exist with an error.
 - Remove the now empty `$source` directory
 
-To include hidden files and directories, rename the file accordingly during the
-template substitution section. They aren't included to allow for `.gitkeep` and
+To include hidden files, rename the file accordingly during the template 
+substitution section. They aren't included to allow for `.gitkeep` and
 `.gitignore` files to work properly, and to ensure they are easily visible in
 the template directories.
 

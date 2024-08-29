@@ -52,10 +52,10 @@ substitute() {
 	[ "$#" -ne 1 ] && return 2
 	OLD_NAME="$1"
 	if [ -d "$1" ]; then
-		for subchild in "$1"/*; do # "$1"/.*; do
-			#	[ "$subchild" = "$1"/.'*' ] && continue
+		for subchild in "$1"/* "$1"/.*; do
+			[ "$subchild" = "$1"/.'*' ] && continue
 			[ "$subchild" = "$1"/'*' ] && continue
-			substitute "$subchild" "$2"
+			substitute "$subchild"
 		done
 		return 0
 	fi
@@ -70,8 +70,8 @@ substitute() {
 		;;
 	esac
 	rm -f ./_tmp/substitute
-	rm -f ./_tmp/substitute_sh
-	touch ./_tmp/substitute_sh
+	rm -f ./_tmp/substitute.sh
+	touch ./_tmp/substitute
 
 	GUARD=0
 	SUB_MODE=
@@ -84,7 +84,7 @@ substitute() {
 			;;
 		'|'*)
 			[ "$GUARD" = 0 ] && GUARD=1
-			[ "$GUARD" = 1 ] && echo "${line#"|"}" >>./_tmp/substitute_sh
+			[ "$GUARD" = 1 ] && echo "${line#"|"}" >>./_tmp/substitute.sh
 			;;
 		*)
 			GUARD=2
@@ -92,6 +92,8 @@ substitute() {
 		esac
 		[ "$GUARD" = 2 ] && echo "$line" >>./_tmp/substitute
 	done <"$OLD_NAME"
+
+	[ -f ./_tmp/substitute.sh ] || echo "cat" >./_tmp/substitute.sh
 
 	SUB_MODE="$(echo "$SUB_MODE" | sed -e 's/^ *//' -e 's/ *$//') "
 	NEW_NAME=$(eval "echo ${SUB_MODE#* }")
@@ -107,27 +109,27 @@ substitute() {
 		case "$SUB_MODE" in
 		fail | 'fail!')
 			echo "substitute: File exists ($SUB_MODE): $NEW_NAME"
-			rm ./_tmp/substitute ./_tmp/substitute_sh
+			rm ./_tmp/substitute ./_tmp/substitute.sh
 			return 1
 			;;
 		override | 'override!')
-			sh -x ./_tmp/substitute_sh <./_tmp/substitute >"$NEW_NAME"
-			rm ./_tmp/substitute ./_tmp/substitute_sh
+			sh -ex ./_tmp/substitute.sh <./_tmp/substitute >"$NEW_NAME"
+			rm ./_tmp/substitute ./_tmp/substitute.sh "$OLD_NAME"
 			return 0
 			;;
 		append | 'append!')
-			sh -x ./_tmp/substitute_sh <./_tmp/substitute >>"$NEW_NAME"
-			rm ./_tmp/substitute ./_tmp/substitute_sh
+			sh -ex ./_tmp/substitute.sh <./_tmp/substitute >>"$NEW_NAME"
+			rm ./_tmp/substitute ./_tmp/substitute.sh "$OLD_NAME"
 			return 0
 			;;
 		transform | 'transform!' | 'transform?')
 			mv -f "$NEW_NAME" ./_tmp/substitute
-			sh -x ./_tmp/substitute_sh <./_tmp/substitute >"$NEW_NAME"
-			rm ./_tmp/substitute ./_tmp/substitute_sh
+			sh -ex ./_tmp/substitute.sh <./_tmp/substitute >"$NEW_NAME"
+			rm ./_tmp/substitute ./_tmp/substitute.sh "$OLD_NAME"
 			return 0
 			;;
 		nothing | 'nothing!')
-			rm ./_tmp/substitute ./_tmp/substitute_sh
+			rm ./_tmp/substitute ./_tmp/substitute.sh "$OLD_NAME"
 			return 0
 			;;
 		*)
@@ -141,17 +143,17 @@ substitute() {
 		case "$SUB_MODE" in
 		'fail!' | 'override!' | 'append!' | 'transform!' | 'nothing!')
 			echo "substitute: File doesn't exist ($SUB_MODE): $NEW_NAME"
-			rm ./_tmp/substitute ./_tmp/substitute_sh
+			rm ./_tmp/substitute ./_tmp/substitute.sh
 			return 1
 			;;
 		'transform?')
 			mv ./_tmp/substitute "$NEW_NAME"
-			rm ./_tmp/substitute_sh
+			rm ./_tmp/substitute.sh "$OLD_NAME"
 			return 0
 			;;
 		fail | override | append | transform | nothing)
-			sh -x ./_tmp/substitute_sh <./_tmp/substitute >"$NEW_NAME"
-			rm ./_tmp/substitute ./_tmp/substitute_sh
+			sh -ex ./_tmp/substitute.sh <./_tmp/substitute >"$NEW_NAME"
+			rm ./_tmp/substitute ./_tmp/substitute.sh "$OLD_NAME"
 			return 0
 			;;
 		*)
@@ -171,13 +173,23 @@ merge_dir() {
 		[ "$subchild" = "$2"/'*' ] && continue
 		BASENAME=$(basename "$subchild")
 		if [ -d "$subchild" ]; then
-			[ -e "$1/$BASENAME" ] && fail1 "merge_dir: Cannot override $1/$BASENAME"
+			[ -f "$1/$BASENAME" ] && fail1 "merge_dir: Cannot override $1/$BASENAME"
 			mkdir -p "$1/$BASENAME"
 			merge_dir "$1/$BASENAME" "$2/$BASENAME"
-		fi
-		if [ -f "$subchild" ]; then
+		elif [ -f "$subchild" ]; then
 			[ -e "$1/$BASENAME" ] && fail1 "merge_dir: Cannot override $1/$BASENAME"
 			mv "$subchild" "$1/$BASENAME"
+		fi
+	done
+	for subchild in "$2"/.*; do
+		[ "$subchild" = "$2"/.'*' ] && continue
+		BASENAME=$(basename "$subchild")
+		if [ -d "$subchild" ]; then
+			[ -f "$1/$BASENAME" ] && fail1 "merge_dir: Cannot override $1/$BASENAME"
+			mkdir -p "$1/$BASENAME"
+			merge_dir "$1/$BASENAME" "$2/$BASENAME"
+		elif [ -f "$subchild" ]; then
+			rm "$subchild"
 		fi
 	done
 	rmdir "$2"
@@ -203,6 +215,8 @@ env_require './config.env' <<EOF
 CONTESTID CONTESTNAME
 EOF
 
+OLDLANG="$LANG"
+
 cat >./_tmp/new-package-settings.env <<EOF
 # Task ID, must be 3 lowercase ASCII letters
 ID=
@@ -216,6 +230,8 @@ $(find ./_templates/_lib/* -prune -type d -exec basename {} ';' | justify 60 '#>
 LIBRARIES='oi testgen'
 # Whether to include the local template. Should usually be true.
 LOCAL=true
+# Identifier of the language to use in the document templates
+LANG=pl
 # Default RAM limit, in megabytes. Can change manually later.
 MEMORY=512
 # Default time limit, in whole seconds. Can change manually later.
@@ -231,12 +247,18 @@ env_require './new-package.sh' <<EOF
 ID NAME TEMPLATE
 EOF
 
+export TASKLANG="${LANG:-pl}"
+export LANG="$OLDLANG"
 export LOCAL="${LOCAL:-true}"
 export MEMORY="${MEMORY:-512}"
 export MEMORY_KB=$((MEMORY * 1024))
 TIME="$(printf "%.3f" "${TIME:-2}")"
-export TIME
 TIME_MS=$(echo "$TIME" | tr -d ".")
+TIME="${TIME%0}"
+TIME="${TIME%0}"
+TIME="${TIME%0}"
+TIME="${TIME%'.'}"
+export TIME
 export TIME_MS
 export LIBRARIES="${LIBRARIES:-}"
 export SUBTASKS="${SUBTASKS:-4}"
@@ -256,7 +278,7 @@ done
 RESOLVED_TEMPLATES=" "
 APPLIED_TEMPLATES=" "
 apply_template() {
-	if [ -d "./_templates/$1" ]; then
+	if ! [ -d "./_templates/$1" ]; then
 		case "$1" in
 		_lib/*)
 			fail1 "template: Unknown library: ${1#'_lib/'}"
