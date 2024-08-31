@@ -1,0 +1,120 @@
+name: release
+on:
+  push:
+    branches:
+      - trunk
+permissions:
+  contents: write
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  release:
+    # This is one job to save on checkout/startup time
+    name: Build and release tasks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Git repository (shallow)
+        uses: actions/checkout@v4
+
+      - name: Fetch release data and deepen repository
+        id: load-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mkdir -p ~/cache/
+          . ./.github/workflows/release-lib.sh
+          set -x
+          load_release
+
+      - name: Cache LaTeX docker image
+        id: cache
+        if: steps.load-release.outputs.update == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/cache/
+          key: ${{ github.workflow }}-cache
+
+      - name: Download LaTeX docker image
+        if: ${{ steps.cache.outputs.cache-hit != 'true' && steps.load-release.outputs.update == 'true' }}
+        run: |
+          docker pull ghcr.io/xu-cheng/texlive-small:latest
+          docker save -o ~/cache/docker-latex.tar ghcr.io/xu-cheng/texlive-small:latest
+
+      - name: Load cached LaTeX image
+        if: ${{ steps.cache.outputs.cache-hit == 'true' && steps.load-release.outputs.update == 'true' }}
+        run: |
+          docker load -i ~/cache/docker-latex.tar
+
+      - name: Compile the statements and packages
+        uses: xu-cheng/texlive-action@v2
+        if: steps.load-release.outputs.update == 'true'
+        with:
+          docker_image: ghcr.io/xu-cheng/texlive-small:latest
+          run: |
+            apk add make gcc g++
+            # Deps like this over the full scheme are considerably faster
+            tlmgr install tools babel babel-polish babel-slovak graphics xcolor fancyvrb iftex lm epsf latex fancyhdr
+
+            # Install additional dependencies here, as required
+            # tlmgr install
+
+            set -ex
+            compile_dir() (
+              set -ex
+              FAIL=
+              cd "$1" || exit "$?"
+
+              # Timeout ain't posix but exists on alpine/busybox
+              if timeout 60 make export >../"${1}make.log" 2>&1; then
+                true
+              else
+                case "$?" in
+                  124|143)
+                    FAIL="Timeout"
+                    ;;
+                  *)
+                    FAIL="Failure"
+                    ;;
+                esac
+              fi
+              [ -f "./doc/${1}zad.pdf" ] && mv "./doc/${1}zad.pdf" "../_build/results/${1}.pdf"
+
+              [ -f "./${1}.tgz" ] && mv "./${1}.tgz" "../_build/results/${1}.tgz"
+
+              mv "../${1}make.log" "../_build/results/${1}.log" || exit "$?"
+
+              if [ -n "$FAIL" ]; then
+                echo "Failed to compile ${1}. Reason: $FAIL"
+                # Small appends are atomic, so no need to `flock`
+                echo "${dir}:$FAIL" >>../_build/status
+              else
+                echo "Successfully compiled ${1}zad.tex"
+                echo "${dir}:Success" >>../_build/status
+              fi
+            )
+
+            COUNT=0
+            while IFS= read -r dir; do
+              compile_dir "${dir}" # 2>/dev/null &
+              COUNT=$((COUNT+1))
+              if [ "$COUNT" -ge 4 ]; then
+                for job in $(jobs -p); do
+                  wait "$job" || exit "$?"
+                done
+                COUNT=0
+              fi
+            done<./_build/update
+            for job in $(jobs -p); do
+              wait "$job" || exit "$?"
+            done
+
+      - name: Update release assets and notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          . ./.github/workflows/release-lib.sh
+          set -x
+          save_release

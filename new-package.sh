@@ -205,6 +205,8 @@ check_env() {
 	fi
 }
 
+export S="$" # Used for trickery w/envsubst
+
 check_env
 
 mkdir -p ./_tmp
@@ -222,6 +224,8 @@ cat >./_tmp/new-package-settings.env <<EOF
 ID=
 # Human readable name, as shown in the task statement
 NAME=
+# Older name of the task, to use in the released status table. Defaults to $NAME
+OLDNAME=
 # Name of the task template to use. The available templates are:
 $(find ./_templates/* -prune -type d -exec basename {} ';' | grep -vE '^_.*$' | justify 60 '#> ')
 TEMPLATE=standard
@@ -265,7 +269,7 @@ export SUBTASKS="${SUBTASKS:-4}"
 
 export TASKID="$ID"
 export TASKNAME="$NAME"
-export S="$" # Used for trickery w/envsubst
+export OLDNAME="${OLDNAME:-}"
 
 echo "$TASKID" | grep -qE "^[a-z]{3}$" || fail "Invalid ID: \"$TASKID\""
 templates="${TEMPLATE:-unreachable_error}"
@@ -336,6 +340,7 @@ for template in $templates; do
 done
 
 mv "./_tmp/$TASKID" "./$TASKID"
+[ -n "$OLDNAME" ] && echo "$OLDNAME" >"./${TASKID}/.old-name"
 
 echo "Created new task in ./$TASKID"
 exit 0

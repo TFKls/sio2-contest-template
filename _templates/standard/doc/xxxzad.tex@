@@ -25,21 +25,22 @@
 
 \usepackage{bm}
 % TEX_PACKAGE_GUARD
+% Remember to add the package to the github action whenever using
+% packages not present in TeXLive small.
 
 \begin{document}
 \begin{tasktext}
 	\noindent Daleko w bajtocji żył lorem ipsum dolor...
 
 	\section{\sinolSNameInput}
-	Brak wej'scia.
+	Brak wej\'scia.
 
 	\section{\sinolSNameOutput}
-	Brak wyj'scia.
+	Brak wyj\'scia.
 
 	\section{\sinolSNameGrading}
-	% \makecompatexample{1ocen}
+	\makecompactexample{1ocen}
 
-	\section{${SUBTASKS}}
 	\begin{center}
 		\begin{tabular}{|c|c|l|c|}
 			\hline
