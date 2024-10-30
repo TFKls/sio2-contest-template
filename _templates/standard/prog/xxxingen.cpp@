@@ -1,4 +1,11 @@
 @fail "${TASKID}ingen.cpp"
+| nonce="660a18a5f96995b03d6c175f566e12fb"
+| RAND=$(echo ${nonce}${TASKID} | md5sum | cut -c1-4)
+| RAND="0x${RAND}"
+| export RAND
+| envsubst '${RAND}'
+#define RANDOM_SEED ${RAND}
+
 int main() {
   return 0;
 }

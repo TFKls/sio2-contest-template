@@ -53,7 +53,7 @@ jobs:
         with:
           docker_image: ghcr.io/xu-cheng/texlive-small:latest
           run: |
-            apk add make gcc g++
+            apk add make gcc g++ zip
             # Deps like this over the full scheme are considerably faster
             tlmgr install tools babel babel-polish babel-slovak graphics xcolor fancyvrb iftex lm epsf latex fancyhdr
 
@@ -82,6 +82,8 @@ jobs:
               [ -f "./doc/${1}zad.pdf" ] && mv "./doc/${1}zad.pdf" "../_build/results/${1}.pdf"
 
               [ -f "./${1}.tgz" ] && mv "./${1}.tgz" "../_build/results/${1}.tgz"
+
+              [ -f "./public/${1}_ocen.zip" ] && mv "./public/${1}_ocen.zip" "../_build/results/${1}_ocen.zip"
 
               mv "../${1}make.log" "../_build/results/${1}.log" || exit "$?"
 

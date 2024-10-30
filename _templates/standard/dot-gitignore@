@@ -3,6 +3,9 @@
 @
 
 /${TASKID}.tgz
+/public/${TASKID}_ocen.zip
+/public/${TASKID}_dlazaw.zip
+
 
 # Comment out when using manual tests!!!
 /in/*.in
@@ -34,4 +37,3 @@
 !/prog/*.py
 !/prog/*.i
 !/prog/Makefile
-

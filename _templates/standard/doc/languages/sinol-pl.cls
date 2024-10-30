@@ -17,7 +17,7 @@
 \def\sinolSNameGrading{Ocenianie}
 \def\sinolSNameSubtask{Podzadanie}
 \def\sinolSNameConditions{Ograniczenia}
-\def\sinolSNamePoints{Punkty}
+\def\sinolSNamePoints{Liczba punktów}
 \def\sinolSNameTimeLimit{Limit czasu}
 
 \newcommand{\iomode}[1]{

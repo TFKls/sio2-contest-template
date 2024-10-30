@@ -38,7 +38,7 @@ justify() {
 	for arg in $(cat); do
 		if [ -z "$curr" ]; then
 			curr="$arg"
-		elif [ "$1" -gt $(("${#curr}" + "${#arg}")) ]; then
+		elif [ "$1" -gt $((${#curr} + ${#arg})) ]; then
 			curr="$curr $arg"
 		else
 			echo "$2$curr"
@@ -55,6 +55,8 @@ substitute() {
 		for subchild in "$1"/* "$1"/.*; do
 			[ "$subchild" = "$1"/.'*' ] && continue
 			[ "$subchild" = "$1"/'*' ] && continue
+			[ "$subchild" = "$1"/. ] && continue
+			[ "$subchild" = "$1"/.. ] && continue
 			substitute "$subchild"
 		done
 		return 0
@@ -84,13 +86,13 @@ substitute() {
 			;;
 		'|'*)
 			[ "$GUARD" = 0 ] && GUARD=1
-			[ "$GUARD" = 1 ] && echo "${line#"|"}" >>./_tmp/substitute.sh
+			[ "$GUARD" = 1 ] && printf "%s\n" "${line#"|"}" >>./_tmp/substitute.sh
 			;;
 		*)
 			GUARD=2
 			;;
 		esac
-		[ "$GUARD" = 2 ] && echo "$line" >>./_tmp/substitute
+		[ "$GUARD" = 2 ] && printf "%s\n" "$line" >>./_tmp/substitute
 	done <"$OLD_NAME"
 
 	[ -f ./_tmp/substitute.sh ] || echo "cat" >./_tmp/substitute.sh
@@ -168,9 +170,12 @@ substitute() {
 
 merge_dir() {
 	[ "$#" -ne 2 ] && return 2
-	for subchild in "$2"/*; do # "$2"/.*; do
+	for subchild in "$2"/*; do
+		# "$2"/.*; do
 		# [ "$subchild" = "$2"/.'*' ] && continue
 		[ "$subchild" = "$2"/'*' ] && continue
+		[ "$subchild" = "$2"/. ] && continue
+		[ "$subchild" = "$2"/.. ] && continue
 		BASENAME=$(basename "$subchild")
 		if [ -d "$subchild" ]; then
 			[ -f "$1/$BASENAME" ] && fail1 "merge_dir: Cannot override $1/$BASENAME"
@@ -183,6 +188,8 @@ merge_dir() {
 	done
 	for subchild in "$2"/.*; do
 		[ "$subchild" = "$2"/.'*' ] && continue
+		[ "$subchild" = "$2"/. ] && continue
+		[ "$subchild" = "$2"/.. ] && continue
 		BASENAME=$(basename "$subchild")
 		if [ -d "$subchild" ]; then
 			[ -f "$1/$BASENAME" ] && fail1 "merge_dir: Cannot override $1/$BASENAME"
@@ -224,7 +231,7 @@ cat >./_tmp/new-package-settings.env <<EOF
 ID=
 # Human readable name, as shown in the task statement
 NAME=
-# Older name of the task, to use in the released status table. Defaults to $NAME
+# Older name of the task, to use in the released status table. Defaults to \$NAME
 OLDNAME=
 # Name of the task template to use. The available templates are:
 $(find ./_templates/* -prune -type d -exec basename {} ';' | grep -vE '^_.*$' | justify 60 '#> ')

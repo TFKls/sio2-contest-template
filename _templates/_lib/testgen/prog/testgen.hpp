@@ -16,6 +16,9 @@
 #include <unordered_map>
 #include <vector>
 
+// Sometimes this might not exist? Securing against the picky C++ ""standard""
+#define uint uint32_t
+
 namespace test {
 /* ==================== util.hpp ====================*/
 

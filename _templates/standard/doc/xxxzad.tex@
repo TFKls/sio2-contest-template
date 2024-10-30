@@ -7,10 +7,11 @@
 | for TASK in $(seq 1 "$SUBTASKS"); do
 |   [ "$TASK" -eq "$REM" ] && SCORE=$((SCORE-1))
 |   SCORES="$SCORES
-|			${TASK} & \$${SCORE}\$ & ... & \$${TIME}\$ s \\\\\\hline"
+|			${TASK} & \$${SCORE}\$ & ... & \$${TIME}\$ s \\\\ \\hline"
 | done
 | export SCORES
-| envsubst
+| envsubst '${TASKLANG} ${TASKID} ${CONTESTNAME} ${CONTESTID} ${MEMORY} ${SCORES} ${TASKNAME}'
+|# cat
 @
 \documentclass[zad,zawodnik,utf8,${TASKLANG}]{sinol}
 \title{${TASKNAME}}
@@ -30,7 +31,21 @@
 
 \begin{document}
 \begin{tasktext}
-	\noindent Daleko w bajtocji żył lorem ipsum dolor...
+	\vspace{-0.5cm}
+	\noindent {}
+	
+	\noindent Jak co roku Bitoniusz organizuje Ogólnobajtockie Biegi Przełajowe. W Bajtocji znajduje się $n$ miast i $m$ ścieżek między nimi, po których uczestnicy zawodów mogą biegać. 
+    
+    Z roku na rok Bitoniusz jest coraz bardziej chciwy - wprowadza coraz to nowe reguły, które zmuszają zawodników do działania na korzyść Bitoniusza, jeśli chcą ukończyć bieg (w zeszłym roku, na przełaju blisko mety
+    postawił osiłka, którego zadaniem było nikogo nie przepuścić do momentu, gdy któryś z zawodników zdebuguje implementację Link-Cut Tree Bitoniusza z czasów jego młodości - kod do tej pory dostaje \textit{Segmentation fault} na sensownych testach). 
+    
+    W tym roku, z powodu obniżonej frekwencji uczestników, Bitoniusz planuje, by podstępem zmusić tych którzy pozostali do opróżnienia kieszeni. Na każdej ścieżce może on postawić osiłka,
+    który nie wypuści zawodnika, dopóki ten nie zapłaci pewnej kwoty (zbir pewnie pobierze też własną prowizję). Oczywiście (jakżeby inaczej), Bitoniusz chce postawić jak najwięcej osiłków by zmaksymalizować swoje zyski.
+    Z drugiej strony, zbiry nie robią (oraz nie robią) darmo, więc aby cała impreza się Bitoniuszowi opłacała, musi on mieć pewność, że każdy zawodnik w drodze od startu do mety spotka każdego postawionego bandytę - całe szczęście dla niego, bajtojczycy są wyjątkowo dumnym narodem,
+    więc każdy kto wystartuje zrobi wszystko by dotrzeć do mety. No, prawie wszystko - jeśli uczestnik spotka na swojej drodze \textit{dwóch} zbirów \textit{jednocześnie} (tzn. na jednym przełaju będzie wiele zbirów), to zrezygnuje z biegu czując podstęp, zbiry rzadko współpracują. 
+
+    Bitoniusz jako organizator ma prawo wyboru miejsca startu i końca biegu (muszą być one różne i musi istnieć ścieżka między nimi). Oblicz dla niego ile maksymalnie osiłków może ustawić i jakie miejscowości powinien wybrać. 
+
 
 	\section{\sinolSNameInput}
 	Brak wej\'scia.
@@ -38,14 +53,15 @@
 	\section{\sinolSNameOutput}
 	Brak wyj\'scia.
 
-	\section{\sinolSNameGrading}
+	\section{Przykład}
 	\makecompactexample{1ocen}
 
+	\section{Podzadania}
 	\begin{center}
-		\begin{tabular}{|c|c|l|c|}
+		\begin{tabular}{|l|l|l|l|}
 			\hline
 			\textbf{\sinolSNameSubtask}    & \textbf{\sinolSNamePoints}    &
-			\textbf{\sinolSNameConditions} & \textbf{\sinolSNameTimeLimit}   \\\hline${SCORES}
+			\textbf{\sinolSNameConditions} & \textbf{\sinolSNameTimeLimit}   \\ \hline${SCORES}
 		\end{tabular}
 	\end{center}
 \end{tasktext}

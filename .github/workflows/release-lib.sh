@@ -11,9 +11,9 @@ Last update: 0000-00-00 00:00:00 +0000 (commit 00000000) <!-- DO NOT EDIT THIS L
 
 Current task status:
 \`\`\`
-❌ - To be done            # add !todo   to commit title to alter task's state, or edit by hand
-⌛ - Done, to be verified  # add !done   to commit title to alter task's state, or edit by hand
-✅ - Done and verified     # add !verify to commit title to alter task's state, or edit by hand
+❌ - Work in progress   # add !todo to commit title to alter task's state, or edit by hand
+⌛ - To be verified     # add !ver  to commit title to alter task's state, or edit by hand
+✅ - Done               # add !done to commit title to alter task's state, or edit by hand
 \`\`\`
 
 <!-- BEGIN_STATUS_TABLE -->
@@ -98,9 +98,9 @@ Last update: $(git log HEAD^..HEAD --pretty=format:%ai) (commit $(git rev-parse 
 
 Current task status:
 \`\`\`
-❌ - To be done            # add !todo   to commit title to alter task's state, or edit by hand
-⌛ - Done, to be verified  # add !done   to commit title to alter task's state, or edit by hand
-✅ - Done and verified     # add !verify to commit title to alter task's state, or edit by hand
+❌ - Work in progress   # add !todo to commit title to alter task's state, or edit by hand
+⌛ - To be verified     # add !ver  to commit title to alter task's state, or edit by hand
+✅ - Done               # add !done to commit title to alter task's state, or edit by hand
 \`\`\`
 <!-- BEGIN_STATUS_TABLE -->
 | Id | State | Name | Old name | Files | Build info |
@@ -142,22 +142,29 @@ EOF
 				STATUS="$STATUS<br>\`No statement file generated.\`"
 			fi
 			if [ -f "./_build/results/${dir}.tgz" ]; then
-				BUILD="$BUILD<br>[Package](https://github.com/$GH_REPO/releases/download/tasks/${dir}.tgz)"
+				BUILD="$BUILD<br>[Problem&nbsp;package](https://github.com/$GH_REPO/releases/download/tasks/${dir}.tgz)"
 				gh release upload tasks "./_build/results/${dir}.tgz" --clobber
 			else
 				grep -q "^${dir}.tgz$" ./_build/old-assets && gh release delete-asset tasks "${dir}.tgz"
 				STATUS="$STATUS<br>\`No package file generated.\`"
+			fi
+			if [ -f "./_build/results/${dir}_ocen.zip" ]; then
+				BUILD="$BUILD<br>[Ocen&nbsp;tests](https://github.com/$GH_REPO/releases/download/tasks/${dir}_ocen.zip)"
+				gh release upload tasks "./_build/results/${dir}_ocen.zip" --clobber
+			else
+				grep -q "^${dir}_ocen.zip$" ./_build/old-assets && gh release delete-asset tasks "${dir}_ocen.zip"
+				STATUS="$STATUS<br>\`No ocen package file generated.\`"
 			fi
 		fi
 
 		# shellcheck disable=SC2013
 		while IFS= read -r line; do
 			case "$line" in
-			*'!ver'*)
+			*'!done'*)
 				STATE="✅"
 				break
 				;;
-			*'!done'*)
+			*'!ver'*)
 				STATE="⌛"
 				break
 				;;

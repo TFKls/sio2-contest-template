@@ -31,7 +31,7 @@ B_PROGS_WER= $(shell find prog -regex "prog/$(ID)[0-9]*wer[0-9]*\.\(c\|cpp\|pas\
 B_PROGS_SLW= $(shell find prog -regex "prog/$(ID)[0-9]*s\.\(c\|cpp\|pas\|py\|ml\|java\)" | sort -n -k 1.`echo "prog/$(ID)"| wc -c`)
 B_PROGS_BAD= $(shell find prog -regex "prog/$(ID)[0-9]*b\.\(c\|cpp\|pas\|py\|ml\|java\)" | sort -n -k 1.`echo "prog/$(ID)"| wc -c`)
 
-.PHONY : clean clean-gen export verify tgz run inwer outgen verify_limits verify_names info report quickver ingen_md5
+.PHONY : clean clean-gen export export-ocen verify tgz run inwer outgen verify_limits verify_names info report quickver ingen_md5
 
 all:
 	# Podaj konkretny cel #
@@ -40,11 +40,16 @@ export:
 	## Przygotowanie paczki dla SInOl'a ##
 	make -C doc
 	make -C prog
+	make export-ocen
 	make clean-gen
 	make clean
 	@touch "$(SIG).tgz" # Fix "file changed when we read it" error on first generation
-	tar cvzf $(SIG).tgz --exclude "$(ID)/$(SIG).tgz" ../$(ID)
+	tar cvzf $(SIG).tgz --exclude "$(ID)/$(SIG).tgz" --exclude "$(ID)/public/$(ID)_ocen.zip" ../$(ID)
 
+export-ocen:
+	# Przygotowanie pliku zip z testami ocen dla uczestnikow
+	mkdir -p public
+	zip public/$(ID)_ocen.zip in/*ocen.in out/*ocen.out
 
 _sinol3_export:
 	## Przygotowanie paczki dla SInOl'a ##
@@ -267,7 +272,7 @@ clean-gen:
 			make -C prog $(ID)ingen.e ; \
 			cd in/tmp ; ../../prog/$(ID)ingen.e ; \
 		fi ; \
-		INGEN_FILES="`echo *.in`"; \
+		INGEN_FILES="`find . -type f \( -iname "*.in" ! -iname "*ocen.in" \)`"; \
 		cd ../.. ; \
 		rm -r in/tmp ; \
 		for i in $$INGEN_FILES; do \
@@ -1012,4 +1017,3 @@ valgrind:
 			$(get_rep_result); \
 		done
 	@echo "</table>\n"
-

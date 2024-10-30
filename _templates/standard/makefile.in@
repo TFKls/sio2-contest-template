@@ -7,9 +7,9 @@ MODE=opr
 ID=${TASKID}
 SIG=$(ID)
 
-TIME_LIMIT=${TIME_WHOLE}
+TIMELIMIT=${TIME_WHOLE}
 SLOW_TIMELIMIT=${TIME_WHOLE_X3}
 MEMLIMIT=${MEMORY_KB}
 
 # Change this locally if not in your PATH
-OI_TIME=oiejq
+OI_TIME=oiejq.sh
