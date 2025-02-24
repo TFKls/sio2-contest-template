@@ -1,3 +1,4 @@
+# Source: https://github.com/sio2project/task-package-examples, w/ some custom changes
 #
 # Package Makefile.
 # Authors: Tomasz Walen, Rafal Rusin, Adam Iwanicki.

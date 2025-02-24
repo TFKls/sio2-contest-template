@@ -1,3 +1,4 @@
+# Source: https://github.com/sio2project/task-package-examples, w/ some custom changes
 include ../makefile.in
 
 GCC_OPT = -Wall -lm -O3 -Wno-unused-result -Werror ${CFLAGS}

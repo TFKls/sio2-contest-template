@@ -1,3 +1,5 @@
+/* Source: https://github.com/sio2project/task-package-examples */
+
 // Input generator
 // See
 // https://github.com/sio2project/oioioi/wiki/%5BEN%5D-5.-Package-with-input-generator

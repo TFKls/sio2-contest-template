@@ -1,3 +1,5 @@
+/* Source: https://github.com/sio2project/task-package-examples */
+
 /*
   Library containing functions used in input and output verification.
   Author: Piotr Niedzwiedz

@@ -1,3 +1,4 @@
+% Source: https://github.com/sio2project/task-package-examples
 %
 % Makrodefinicje systemu SINOL
 %

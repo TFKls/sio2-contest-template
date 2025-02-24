@@ -1,4 +1,4 @@
-// Source: https://github.com/FilipKon13/tests-generation/tree/0926e58
+/* Source: https://github.com/FilipKon13/tests-generation/tree/0926e58 */
 
 // Typical (idiomatic?) usage of this library for the SIO2/OIOIOI system.
 
