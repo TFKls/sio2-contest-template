@@ -54,6 +54,7 @@ jobs:
           docker_image: ghcr.io/xu-cheng/texlive-small:latest
           run: |
             apk add make gcc g++ zip
+            tlmgr update --self
             # Deps like this over the full scheme are considerably faster
             tlmgr install tools babel babel-polish babel-slovak graphics xcolor fancyvrb iftex lm epsf latex fancyhdr
 
