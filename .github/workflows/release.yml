@@ -7,7 +7,7 @@ permissions:
   contents: write
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   release:
     # This is one job to save on checkout/startup time
@@ -60,6 +60,7 @@ jobs:
 
             # Install additional dependencies here, as required
             # tlmgr install
+            export TIMEOUT=$(sh -c 'set -a; . ./config.env; echo "${GH_TIMEOUT:-120}"')
 
             set -ex
             compile_dir() (
@@ -68,7 +69,7 @@ jobs:
               cd "$1" || exit "$?"
 
               # Timeout ain't posix but exists on alpine/busybox
-              if timeout 60 make export >../"${1}make.log" 2>&1; then
+              if timeout "$TIMEOUT" make export >../"${1}make.log" 2>&1; then
                 true
               else
                 case "$?" in

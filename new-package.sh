@@ -8,8 +8,19 @@ fail() {
 	fail1 "$0:" "$@"
 }
 fail1() {
-	echo "$@"
+	bold "$@"
 	return 1
+}
+bold() {
+	if command -v tput >/dev/null; then
+		TPUT="tput"
+	else
+		TPUT="true"
+	fi
+
+	"$TPUT" bold
+	echo "$@"
+	"$TPUT" sgr0
 }
 
 # Untrusted, but I can't bother
@@ -110,7 +121,7 @@ substitute() {
 	if [ -f "$NEW_NAME" ]; then
 		case "$SUB_MODE" in
 		fail | 'fail!')
-			echo "substitute: File exists ($SUB_MODE): $NEW_NAME"
+			bold "substitute: File exists ($SUB_MODE): $NEW_NAME"
 			rm ./_tmp/substitute ./_tmp/substitute.sh
 			return 1
 			;;
@@ -135,16 +146,16 @@ substitute() {
 			return 0
 			;;
 		*)
-			echo "substitute: Invalid mode: $1"
-			echo "substitute: Allowed modes:"
-			echo "fail fail! override override! append append! transform transform? transform! nothing nothing!" | justify 50 "substitute:   "
+			bold "substitute: Invalid mode: $1"
+			bold "substitute: Allowed modes:"
+			bold "fail fail! override override! append append! transform transform? transform! nothing nothing!" | justify 50 "substitute:   "
 			return 1
 			;;
 		esac
 	else
 		case "$SUB_MODE" in
 		'fail!' | 'override!' | 'append!' | 'transform!' | 'nothing!')
-			echo "substitute: File doesn't exist ($SUB_MODE): $NEW_NAME"
+			bold "substitute: File doesn't exist ($SUB_MODE): $NEW_NAME"
 			rm ./_tmp/substitute ./_tmp/substitute.sh
 			return 1
 			;;
@@ -159,9 +170,9 @@ substitute() {
 			return 0
 			;;
 		*)
-			echo "substitute: Invalid mode: $1"
-			echo "substitute: Allowed modes:"
-			echo "fail fail! override override! append append! transform transform? transform! nothing nothing!" | justify 50 "substitute:   "
+			bold "substitute: Invalid mode: $1"
+			bold "substitute: Allowed modes:"
+			bold "fail fail! override override! append append! transform transform? transform! nothing nothing!" | justify 50 "substitute:   "
 			return 1
 			;;
 		esac
@@ -221,35 +232,64 @@ mkdir -p ./_tmp
 env_load ./config.env
 
 env_require './config.env' <<EOF
-CONTESTID CONTESTNAME
+CONTEST_ID CONTEST_NAME
 EOF
+export CONTESTID="$CONTEST_ID"
+export CONTESTNAME="$CONTEST_NAME"
 
 OLDLANG="$LANG"
 
-cat >./_tmp/new-package-settings.env <<EOF
-# Task ID, must be 3 lowercase ASCII letters
-ID=
-# Human readable name, as shown in the task statement
-NAME=
-# Older name of the task, to use in the released status table. Defaults to \$NAME
-OLDNAME=
-# Name of the task template to use. The available templates are:
-$(find ./_templates/* -prune -type d -exec basename {} ';' | grep -vE '^_.*$' | justify 60 '#> ')
-TEMPLATE=standard
-# Name of the additional libraries to include. Available are:
-$(find ./_templates/_lib/* -prune -type d -exec basename {} ';' | justify 60 '#> ')
-LIBRARIES='oi testgen'
-# Whether to include the local template. Should usually be true.
-LOCAL=true
-# Identifier of the language to use in the document templates
-LANG=pl
-# Default RAM limit, in megabytes. Can change manually later.
-MEMORY=512
-# Default time limit, in whole seconds. Can change manually later.
-TIME=2
-# Default number of subtasks to generate. Can change manually later.
-SUBTASKS=4
+cat >./_tmp/default-package-settings.env <<-EOF
+	# Task ID, must be 3 lowercase ASCII letters
+	ID=
+	# Human readable name, as shown in the task statement
+	NAME=
+	# Older name of the task, to use in the released status table. Defaults to \$NAME
+	OLDNAME=
+	# Name of the task template to use. The available templates are:
+	$(find ./_templates/* -prune -type d -exec basename {} ';' | grep -vE '^_.*$' | justify 60 '#> ')
+	TEMPLATE=${DEF_TEMPLATE:-standard}
+	# Name of the additional libraries to include. Available are:
+	$(find ./_templates/_lib/* -prune -type d -exec basename {} ';' | justify 60 '#> ')
+	LIBRARIES='${DEF_LIBRARIES:-oi testgen}'
+	# Whether to include the local template. Should usually be true.
+	LOCAL=${DEF_LOCAL:-true}
+	# Identifier of the language to use in the document templates
+	LANG=${DEF_LANG:-pl}
+	# Default RAM limit, in megabytes. Can change manually later.
+	MEMORY=${DEF_MEMORY:-512}
+	# Default time limit, in whole seconds. Can change manually later.
+	TIME=${DEF_TIME:-2}
+	# Default number of subtasks to generate. Can change manually later.
+	SUBTASKS=${DEF_SUBTASKS:-4}
 EOF
+
+RECOVER=
+if [ -f "./_tmp/new-package-settings.env" ] && ! diff "./_tmp/new-package-settings.env" "./_tmp/default-package-settings.env" >/dev/null; then
+	while [ -z "${RECOVER:-}" ]; do
+		bold "An old package specification was found. Recover? (y/n)"
+		read -r _recover_opt
+		case "$_recover_opt" in
+		[yY] | [yY][eE][sS])
+			RECOVER=true
+			;;
+		[nN] | [nN][oO])
+			RECOVER=false
+			;;
+		*)
+			echo "Expected either y[es] or n[o]. Please try again."
+			;;
+		esac
+	done
+else
+	RECOVER=false
+fi
+
+if ! "$RECOVER"; then
+	mv ./_tmp/default-package-settings.env ./_tmp/new-package-settings.env
+else
+	rm ./_tmp/default-package-settings.env
+fi
 
 ${EDITOR:-nano} "./_tmp/new-package-settings.env"
 env_load <"./_tmp/new-package-settings.env"
@@ -295,7 +335,7 @@ apply_template() {
 			fail1 "template: Unknown library: ${1#'_lib/'}"
 			;;
 		_local)
-			echo "template: _local template doesn't exist. Skipping."
+			bold "template: _local template doesn't exist. Skipping."
 			return 0
 			;;
 		*)
@@ -306,16 +346,16 @@ apply_template() {
 
 	case "$APPLIED_TEMPLATES" in
 	*" $1 "*)
-		echo "template: Template $1 already applied"
+		bold "template: Template $1 already applied"
 		return 0
 		;;
 	*)
-		echo "template: Resolving $1..."
+		bold "template: Resolving $1..."
 		;;
 	esac
 	case "$RESOLVED_TEMPLATES" in
 	*" $1 "*)
-		echo "template: Failed resolution due to a dependency loop."
+		bold "template: Failed resolution due to a dependency loop."
 		return 1
 		;;
 	*)
@@ -325,17 +365,17 @@ apply_template() {
 
 	RESOLVED_TEMPLATES="$RESOLVED_TEMPLATES$1 "
 	if [ -f "./_templates/$1/_extend" ]; then
-		echo "template: Resolving dependencies for $1..."
+		bold "template: Resolving dependencies for $1..."
 		while IFS= read -r extend; do
 			apply_template "$(dirname "./_templates/$1")/$extend"
 		done <"./_templates/$1/_extend"
 	fi
-	echo "template: Applying $1..."
+	bold "template: Applying $1..."
 	cp -RL "./_templates/$1" "./_tmp/_copy"
 	rm -f "./_tmp/copy/_extend"
 	merge_dir "./_tmp/$TASKID" "./_tmp/_copy"
 	substitute "./_tmp/$TASKID"
-	echo "template: Applied $1"
+	bold "template: Applied $1"
 	APPLIED_TEMPLATES="$APPLIED_TEMPLATES$1 "
 }
 
@@ -349,5 +389,7 @@ done
 mv "./_tmp/$TASKID" "./$TASKID"
 [ -n "$OLDNAME" ] && echo "$OLDNAME" >"./${TASKID}/.old-name"
 
-echo "Created new task in ./$TASKID"
+rm -f./_tmp/new-package-settings.env
+
+bold "Created new task in ./$TASKID"
 exit 0
