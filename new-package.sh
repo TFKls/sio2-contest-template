@@ -389,7 +389,7 @@ done
 mv "./_tmp/$TASKID" "./$TASKID"
 [ -n "$OLDNAME" ] && echo "$OLDNAME" >"./${TASKID}/.old-name"
 
-rm -f./_tmp/new-package-settings.env
+rm -f ./_tmp/new-package-settings.env
 
 bold "Created new task in ./$TASKID"
 exit 0
